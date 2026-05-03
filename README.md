@@ -1,1 +1,1 @@
-# Proyecto-de-Estructuras-
+# Proyecto de Estructuras - App de Noticias 
