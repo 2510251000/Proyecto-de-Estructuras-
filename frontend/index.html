@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal de Noticias</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: Georgia, 'Times New Roman', serif;
+            background: #f4f1eb;
+            color: #1a1a1a;
+            min-height: 100vh;
+        }
+
+        header {
+            background: #1a1a1a;
+            color: #f4f1eb;
+            padding: 24px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 4px solid #c8a94a;
+        }
+
+        header h1 { font-size: 2rem; letter-spacing: 2px; text-transform: uppercase; }
+
+        header a {
+            background: #c8a94a;
+            color: #1a1a1a;
+            padding: 10px 20px;
+            text-decoration: none;
+            font-family: Arial, sans-serif;
+            font-size: 0.85rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        header a:hover { background: #e0c060; }
+
+        main { max-width: 860px; margin: 40px auto; padding: 0 20px; }
+
+        #estado {
+            text-align: center;
+            padding: 30px;
+            font-style: italic;
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .noticia-card {
+            background: #fff;
+            border-left: 5px solid #c8a94a;
+            margin-bottom: 30px;
+            padding: 24px 28px;
+            box-shadow: 2px 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .noticia-card h2 { font-size: 1.5rem; margin-bottom: 8px; line-height: 1.3; }
+
+        .fecha {
+            display: block;
+            font-family: Arial, sans-serif;
+            font-size: 0.78rem;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+
+        .noticia-card p { color: #444; line-height: 1.7; margin-bottom: 16px; }
+
+        .acciones { display: flex; gap: 10px; }
+
+        .btn-editar {
+            background: #1a1a1a;
+            color: #fff;
+            padding: 8px 18px;
+            text-decoration: none;
+            font-family: Arial, sans-serif;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .btn-editar:hover { background: #333; }
+
+        .btn-eliminar {
+            background: #c0392b;
+            color: #fff;
+            border: none;
+            padding: 8px 18px;
+            cursor: pointer;
+            font-family: Arial, sans-serif;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .btn-eliminar:hover { background: #e74c3c; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>📰 Portal de Noticias</h1>
+        <a href="crear.html">+ Nueva noticia</a>
+    </header>
+
+    <main>
+        <div id="estado">Cargando noticias...</div>
+        <div id="lista"></div>
+    </main>
+
+    <script>
+        var API = 'http://localhost:8000/backend/api/noticias.php';
+
+        function cargarNoticias() {
+            document.getElementById('estado').textContent = 'Cargando noticias...';
+            document.getElementById('lista').innerHTML = '';
+
+            fetch(API)
+                .then(function(respuesta) {
+                    if (!respuesta.ok) throw new Error('Error ' + respuesta.status);
+                    return respuesta.json();
+                })
+                .then(function(noticias) {
+                    document.getElementById('estado').textContent = '';
+
+                    if (!Array.isArray(noticias) || noticias.length === 0) {
+                        document.getElementById('estado').textContent = 'No hay noticias todavía. ¡Crea la primera!';
+                        return;
+                    }
+
+                    var lista = document.getElementById('lista');
+
+                    noticias.forEach(function(noticia) {
+                        var card = document.createElement('div');
+                        card.className = 'noticia-card';
+
+                        var titulo = document.createElement('h2');
+                        titulo.textContent = noticia.titulo;
+
+                        var fecha = document.createElement('span');
+                        fecha.className = 'fecha';
+                        fecha.textContent = 'Publicado el ' + noticia.fecha;
+
+                        var contenido = document.createElement('p');
+                        contenido.textContent = noticia.contenido;
+
+                        var acciones = document.createElement('div');
+                        acciones.className = 'acciones';
+
+                        var btnEditar = document.createElement('a');
+                        btnEditar.href = 'editar.html?id=' + noticia.id;
+                        btnEditar.className = 'btn-editar';
+                        btnEditar.textContent = 'Editar';
+
+                        var btnEliminar = document.createElement('button');
+                        btnEliminar.className = 'btn-eliminar';
+                        btnEliminar.textContent = 'Eliminar';
+                        btnEliminar.setAttribute('data-id', String(noticia.id));
+                        btnEliminar.addEventListener('click', function() {
+                            eliminar(this.getAttribute('data-id'));
+                        });
+
+                        acciones.appendChild(btnEditar);
+                        acciones.appendChild(btnEliminar);
+                        card.appendChild(titulo);
+                        card.appendChild(fecha);
+                        card.appendChild(contenido);
+                        card.appendChild(acciones);
+                        lista.appendChild(card);
+                    });
+                })
+                .catch(function(error) {
+                    document.getElementById('estado').textContent = 'No se pudo conectar. Verifica que el servidor esté corriendo en localhost:8000.';
+                    console.error(error);
+                });
+        }
+
+        function eliminar(id) {
+            if (!confirm('¿Seguro que quieres eliminar esta noticia? No se puede deshacer.')) return;
+
+            fetch(API + '?id=' + id, { method: 'DELETE' })
+                .then(function(respuesta) {
+                    if (!respuesta.ok) throw new Error('Error al eliminar');
+                    return respuesta.json();
+                })
+                .then(function(data) {
+                    alert(data.mensaje || 'Noticia eliminada.');
+                    cargarNoticias();
+                })
+                .catch(function(error) {
+                    alert('Error al eliminar la noticia.');
+                    console.error(error);
+                });
+        }
+
+        cargarNoticias();
+    </script>
+
+</body>
+</html>
