@@ -1,6 +1,7 @@
 <?php
 function conectar() {
-    $base = new PDO('sqlite:noticias.db');
+    $ruta = __DIR__ . '/../../noticias.db';
+    $base = new PDO('sqlite:' . $ruta);
     $base->exec("CREATE TABLE IF NOT EXISTS noticias (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         titulo TEXT,
